@@ -1,0 +1,14 @@
+1. kết nối tạo 2 collections là definition và record với mongoose 
+2. CRUD cho các đối tượng
+3. 2 model definition và record là 2 ảnh
+4. Yêu cầu viết các API trả ra theo kiểu dữ liệu JSON với các endpoint như sau: 
+
+- GET: api/Sensors/definitions (Lấy tất cả các cấu trúc hiện có - lấy tất cả các dữ liệu trong collections definitions) 
+- GET: api/Sensors/definitions/active (lấy definition active hiện tại trong bảng )
+- Get: api/Sensors/:definition_id/GetAllRecords (lấy tất cả các dữ liệu từ bảng records với definition_id truyền từ url vào) 
+- POST: api/Sensors/:definitions_id/DeleteRecords (xóa đồng loạt tất cả các cảm biến đi theo với lại cấu trúc _definition_id được yêu cầu) 
+- POST: api/Sensors/:definitions_id/UpdateRecordById/:record_id (cập nhật thông tin của record đưa thông tin - lưu ý cập nhật thông tin nào cũng được).
+
+
+Lưu ý là làm với 2 collection definitions, và records. 
+Sẽ có điểm cộng cho những bạn làm được phần JWT khi gọi đến những link cho POST method.
