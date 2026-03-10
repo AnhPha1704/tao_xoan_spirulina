@@ -1,6 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Routes
 import sensorRoutes from './routes/sensorRoutes.js';
@@ -15,13 +20,16 @@ const app = express();
 
 app.use(express.json());
 
-// Mount routes
+// Serve static frontend from /public folder
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Mount API routes
 app.use('/api/Sensors', sensorRoutes);
 app.use('/api/auth', authRoutes);
 
-// Root endpoint test
+// Fallback: serve index.html for root
 app.get('/', (req, res) => {
-    res.send('Spirulina Sensors API is running...');
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
