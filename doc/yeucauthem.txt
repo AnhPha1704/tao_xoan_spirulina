@@ -12,3 +12,5 @@
 
 Lưu ý là làm với 2 collection definitions, và records. 
 Sẽ có điểm cộng cho những bạn làm được phần JWT khi gọi đến những link cho POST method.
+
+5. mỗi 10 phút sẽ lấy dữ liệu từ http://45.117.179.192:8000/api/log/last-log/C003 lưu vào db
