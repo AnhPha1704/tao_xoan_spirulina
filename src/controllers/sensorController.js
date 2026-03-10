@@ -25,12 +25,36 @@ export const getActiveDefinition = async (req, res) => {
     }
 };
 
+// POST: api/Sensors/definitions
+export const createDefinition = async (req, res) => {
+    try {
+        const newDef = new Definition(req.body);
+        const savedDef = await newDef.save();
+        res.status(201).json(savedDef);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // GET: api/Sensors/:definition_id/GetAllRecords
 export const getAllRecords = async (req, res) => {
     try {
         const { definition_id } = req.params;
         const records = await Record.find({ definition_id });
         res.json(records);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// POST: api/Sensors/:definition_id/records
+export const createRecord = async (req, res) => {
+    try {
+        const { definition_id } = req.params;
+        const recordData = { ...req.body, definition_id };
+        const newRecord = new Record(recordData);
+        const savedRecord = await newRecord.save();
+        res.status(201).json(savedRecord);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

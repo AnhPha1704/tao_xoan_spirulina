@@ -1005,8 +1005,12 @@
               <textarea id="qa-body" placeholder='{"values":[{"key":"pH","value":8.5}]}'></textarea>
             </div>
             <div class="btn-group">
-              <button class="btn btn-primary btn-sm" onclick="qaUpdate()">Update</button>
-              <button class="btn btn-danger btn-sm" onclick="qaDelete()">Clear All</button>
+              <button class="btn btn-primary btn-sm" onclick="qaCreateDef()">New Station</button>
+              <button class="btn btn-primary btn-sm" style="background:var(--green2);" onclick="qaCreateRec()">Push
+                Data</button>
+              <button class="btn btn-ghost btn-sm" style="border:1px solid var(--border)"
+                onclick="qaUpdate()">Update</button>
+              <button class="btn btn-danger btn-sm" onclick="qaDelete()">Clear</button>
             </div>
             <div id="qa-status" style="margin-top:0.75rem"></div>
           </div>
@@ -1416,11 +1420,34 @@
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              titleColor: 'var(--text)',
+              bodyColor: 'var(--text2)',
+              borderColor: 'var(--border2)',
+              borderWidth: 1,
+              titleFont: { family: 'Outfit', size: 13, weight: '600' },
+              bodyFont: { family: 'Outfit', size: 12 },
+              padding: 10,
+              displayColors: true,
+              boxPadding: 4,
+              cornerRadius: 6,
+              caretSize: 6,
+              boxWidth: 8,
+              boxHeight: 8
+            }
           },
           scales: {
-            x: { grid: { display: false } },
-            y: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { dash: [4, 4] } }
+            x: {
+              grid: { display: false, drawBorder: false },
+              ticks: { font: { family: 'Outfit', size: 10 }, color: 'var(--text3)', maxRotation: 45, minRotation: 45 }
+            },
+            y: {
+              grid: { color: 'rgba(0,0,0,0.03)', drawBorder: false },
+              border: { dash: [4, 4], display: false },
+              ticks: { font: { family: 'Outfit', size: 11 }, color: 'var(--text3)', padding: 8 }
+            }
           }
         }
       });
@@ -1597,6 +1624,34 @@
         document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã cập nhật record #${r._id.slice(-6)}</span>`;
         toast('Cập nhật hoàn tất', 'ok');
         loadRecords(defId);
+      }
+    }
+
+    async function qaCreateDef() {
+      if (!token) { toast('Vui lòng đăng nhập để thao tác!', 'err'); return; }
+      const bodyStr = document.getElementById('qa-body').value.trim();
+      let body = {};
+      try { body = JSON.parse(bodyStr); } catch { toast('Payload JSON bị lỗi syntax', 'err'); return; }
+      const r = await api(`/api/Sensors/definitions`, 'POST', body);
+      if (r._id) {
+        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã tạo Definition mới #${r._id.slice(-6)}</span>`;
+        toast('Tạo Trạm (Definition) mới thành công', 'ok');
+        loadDefinitions(); // reload side list
+      }
+    }
+
+    async function qaCreateRec() {
+      if (!token) { toast('Vui lòng đăng nhập để thao tác!', 'err'); return; }
+      const defId = document.getElementById('qa-def-id').value.trim();
+      if (!defId) { toast('Cần kích chọn một máy Trạm (Definition) phía trên!', 'warn'); return; }
+      const bodyStr = document.getElementById('qa-body').value.trim();
+      let body = {};
+      try { body = JSON.parse(bodyStr); } catch { toast('Payload JSON bị lỗi syntax', 'err'); return; }
+      const r = await api(`/api/Sensors/${defId}/records`, 'POST', body);
+      if (r._id) {
+        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã bớm Data Record mới #${r._id.slice(-6)}</span>`;
+        toast('Ghi dữ liệu thành công', 'ok');
+        loadRecords(defId); // real time refresh
       }
     }
 
