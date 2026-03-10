@@ -1123,6 +1123,10 @@
       nitrate_mg: { min: 10, max: 80, wMin: 5, wMax: 100, unit: 'mg/L', icon: '🧬', label: 'Nitrat', cluster: 'water' },
       phosphate_mg: { min: 5, max: 30, wMin: 2, wMax: 40, unit: 'mg/L', icon: '🔩', label: 'Phosphate', cluster: 'water' },
       humidity_percent: { min: 50, max: 90, wMin: 40, wMax: 95, unit: '%', icon: '💧', label: 'Độ ẩm', cluster: 'air' },
+      DO: { min: 4, max: 8, wMin: 3, wMax: 9, unit: 'mg/L', icon: '🫧', label: 'Oxy hoà tan (DO)', cluster: 'water' },
+      EC: { min: 0.01, max: 0.5, wMin: 0, wMax: 1.0, unit: 'mS/cm', icon: '⚡', label: 'Độ dẫn điện (EC)', cluster: 'water' },
+      PH: { min: 8, max: 10, wMin: 7.5, wMax: 10.5, unit: '', icon: '🧪', label: 'Độ pH', cluster: 'water' },
+      T02: { min: 20, max: 35, wMin: 18, wMax: 38, unit: '°C', icon: '🌡️', label: 'Nhiệt độ (T02)', cluster: 'water' },
     };
 
     const CLUSTER_META = {
@@ -1275,6 +1279,8 @@
       const defId = id || currentDefId;
       if (!defId) { toast('Chọn cấu trúc cảm biến trước', 'warn'); return; }
       currentDefId = defId;
+
+      allRecords = [];
 
       const data = await api(`/api/Sensors/${defId}/GetAllRecords`, 'GET');
       allRecords = Array.isArray(data) ? data : (data.value || []);
@@ -1585,7 +1591,6 @@
           const s = evalSensor(k, val);
           const cls = { ok: 'val-ok', warn: 'val-warn val-badge vb-warn', caution: 'val-caution val-badge vb-caution', unknown: '' }[s];
           const display = val === undefined ? '—' : (typeof val === 'number' ? val.toFixed(2) : val);
-          // Cho minimal, ta ko hiện badge nếu ok cho đỡ rối
           return `<td class="${cls}">${display}${val !== undefined && THRESHOLDS[k] ? ' ' + THRESHOLDS[k].unit : ''}</td>`;
         }).join('')}
       </tr>`;
