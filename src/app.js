@@ -32,7 +32,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api/Sensors', sensorRoutes);
 app.use('/api/auth', authRoutes);
 
-// Swagger Documentation Route (Yêu cầu 6)
+// Swagger Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Fallback: serve index.html for root
