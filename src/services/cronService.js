@@ -5,7 +5,7 @@ import { Record } from '../models/Record.js';
 
 const TARGET_API_URL = 'http://45.117.179.192:8000/api/log/last-log/C004';
 
-// Hàm Service kéo logic data C003
+// [Yêu cầu 5]: Hàm lấy dữ liệu từ API bên ngoài (C003/C004) lưu vào database
 export const fetchLogC003 = async () => {
     try {
         console.log('[Cron Job] Đang kéo dữ liệu từ API C004...');
@@ -71,6 +71,7 @@ export const fetchLogC003 = async () => {
     }
 };
 
+// [Yêu cầu 5]: Khởi tạo tác vụ định kỳ mỗi 10 phút
 export const initCronJobs = () => {
     fetchLogC003();
 

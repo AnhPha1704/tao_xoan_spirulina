@@ -988,6 +988,54 @@
           </div>
         </div>
 
+        <!-- [Yêu cầu 7]: Giao diện Bộ lọc nâng cao -->
+        <div class="card">
+          <div class="card-h">
+            <span class="card-title">Bộ lọc nâng cao</span>
+          </div>
+          <div class="card-body">
+            <div class="fg">
+              <button class="btn btn-ghost btn-sm btn-full" style="justify-content:flex-start"
+                onclick="filterByActiveDef()">
+                🎯 Records của Trạm Active
+              </button>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
+              <label>Lọc theo ngưỡng giá trị</label>
+              <div class="fg" style="margin-bottom: 0.5rem">
+                <select id="flt-key">
+                  <option value="temperature_C">Nhiệt độ (°C)</option>
+                  <option value="pH">Độ pH</option>
+                  <option value="light_lux">Ánh sáng (lux)</option>
+                  <option value="humidity_percent">Độ ẩm (%)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <input id="flt-min" type="number" placeholder="Min" style="padding: 0.4rem" />
+                <input id="flt-max" type="number" placeholder="Max" style="padding: 0.4rem" />
+              </div>
+              <button class="btn btn-primary btn-sm btn-full" style="margin-top: 0.5rem"
+                onclick="filterByThreshold()">Lọc kết quả</button>
+            </div>
+
+            <div class="fg">
+              <button class="btn btn-ghost btn-sm btn-full" style="justify-content:flex-start"
+                onclick="filterByComplex()">
+                📊 Cấu trúc phức tạp
+              </button>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <label>Xem dữ liệu sau ngày</label>
+              <div class="fg" style="margin-bottom: 0.5rem">
+                <input id="flt-date" type="date" value="2026-02-01" />
+              </div>
+              <button class="btn btn-primary btn-sm btn-full" onclick="filterByDate()">Lọc theo ngày</button>
+            </div>
+          </div>
+        </div>
+
         <!-- QUICK ACTIONS -->
         <div class="card">
           <div class="card-h"><span class="card-title">Developer Tools</span></div>
@@ -1244,7 +1292,7 @@
         return `<div class="def-item" id="def-${d._id}" onclick="selectDef('${d._id}',${JSON.stringify(d).replace(/"/g, '&quot;')})">
       <div class="def-header">
         <span class="def-name">${d.name || d.version_id || 'Sensor Structure'}</span>
-        <span class="def-tag ${on ? 'dt-on' : 'dt-off'}">${on ? 'Active' : 'Bản nháp'}</span>
+        <span class="def-tag ${on ? 'dt-on' : 'dt-off'}">${on ? 'Active' : 'Inactive'}</span>
       </div>
       <div class="def-id">ID: ${d._id}</div>
       <div class="def-tags">
@@ -1658,6 +1706,53 @@
         toast('Ghi dữ liệu thành công', 'ok');
         loadRecords(defId); // real time refresh
       }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       ADVANCED FILTERS (Requirement 7)
+    ═══════════════════════════════════════════════════ */
+    async function filterByActiveDef() {
+      const data = await api('/api/Sensors/records/active-definition', 'GET');
+      updateUIWithFilteredData(data, 'Đang xem: Trạm đang Hoạt động');
+    }
+
+    async function filterByThreshold() {
+      const key = document.getElementById('flt-key').value;
+      const min = document.getElementById('flt-min').value;
+      const max = document.getElementById('flt-max').value;
+
+      let url = `/api/Sensors/records/filter?key=${key}`;
+      if (min) url += `&min=${min}`;
+      if (max) url += `&max=${max}`;
+
+      const data = await api(url, 'GET');
+      updateUIWithFilteredData(data, `Lọc: ${key} (${min || '?'}-${max || '?'})`);
+    }
+
+    async function filterByComplex() {
+      const data = await api('/api/Sensors/records/complex-structure', 'GET');
+      updateUIWithFilteredData(data, 'Lọc: Cấu trúc 5+ cột');
+    }
+
+    async function filterByDate() {
+      const date = document.getElementById('flt-date').value;
+      if (!date) { toast('Vui lòng chọn ngày', 'warn'); return; }
+      const data = await api(`/api/Sensors/records/after-date?date=${date}`, 'GET');
+      updateUIWithFilteredData(data, `Lọc: Sau ngày ${date}`);
+    }
+
+    function updateUIWithFilteredData(data, label) {
+      allRecords = Array.isArray(data) ? data : (data.value || []);
+      toast(`Đã tìm thấy ${allRecords.length} bản ghi`, 'ok');
+
+      document.getElementById('rec-count-badge').textContent = `${allRecords.length}`;
+      document.getElementById('sensor-def-label').textContent = label;
+
+      renderSensorCards(allRecords);
+      renderChart(allRecords);
+      renderRecordsTable(allRecords);
+      renderStats(allRecords);
+      renderAlerts(allRecords);
     }
 
     /* ═══════════════════════════════════════════════════

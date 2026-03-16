@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 import sensorRoutes from './routes/sensorRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
-// Swagger
+// [Yêu cầu 6]: Tích hợp Swagger Documentation
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 
@@ -32,7 +32,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api/Sensors', sensorRoutes);
 app.use('/api/auth', authRoutes);
 
-// Swagger Documentation Route
+// [Yêu cầu 6]: Tuyến đường hiển thị tài liệu API Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Fallback: serve index.html for root
