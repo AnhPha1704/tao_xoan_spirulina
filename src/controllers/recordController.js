@@ -20,6 +20,7 @@ export const deleteRecords = async (req, res) => {
     }
 };
 
+
 // Lấy dữ liệu cho trạm đang hoạt động
 export const getRecordsByActiveDefinition = async (req, res) => {
     try {
