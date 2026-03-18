@@ -5,8 +5,27 @@ import { Record } from '../models/Record.js';
 
 const TARGET_API_URL = 'http://45.117.179.192:8000/api/log/last-log/C004';
 
-// [Yêu cầu 5]: Hàm lấy dữ liệu từ API bên ngoài (C003/C004) lưu vào database
-export const fetchLogC003 = async () => {
+// Hàm phụ: Tự động cập nhật columns cho Definition nếu có cảm biến mới
+const updateDefinitionColumns = async (definition, values, stationCode) => {
+    const currentKeys = definition.columns.map(c => c.key);
+    const newKeys = values.map(v => v.key);
+    const needsUpdate = newKeys.some(k => !currentKeys.includes(k));
+
+    if (needsUpdate) {
+        console.log(`[Cron Job] Phát hiện cảm biến mới cho trạm ${stationCode}. Đang cập nhật columns...`);
+        const updatedColumns = [...definition.columns];
+        newKeys.forEach(k => {
+            if (!currentKeys.includes(k)) {
+                updatedColumns.push({ key: k, type: 'number', required: false });
+            }
+        });
+        definition.columns = updatedColumns;
+        await definition.save();
+    }
+};
+
+// Hàm lấy dữ liệu từ API bên ngoài
+export const fetchStationData = async () => {
     try {
         console.log('[Cron Job] Đang kéo dữ liệu từ API C004...');
         const response = await fetch(TARGET_API_URL, { timeout: 10000 });
@@ -16,42 +35,28 @@ export const fetchLogC003 = async () => {
         }
 
         const data = await response.json();
-        const sourceData = data.data || data;
-        let stationCode = 'UNKNOWN_STATION';
-        if (Array.isArray(sourceData) && sourceData.length > 0 && sourceData[0].cluster_code) {
-            stationCode = sourceData[0].cluster_code;
+        const sensorsData = data.data || data;
+        
+        // Cấu trúc dữ liệu từ API C004: { stationCode, DO, EC, PH, T02, ... }
+        const { stationCode, ...sensors } = sensorsData;
+
+        if (!stationCode) {
+            console.log('[Cron Job] Dữ liệu API không chứa stationCode. Bỏ qua.');
+            return;
         }
 
         let targetDef = await Definition.findOne({ version_id: stationCode });
-
         if (!targetDef) {
-            console.log(`[Cron Job] Trạm ${stationCode} mới. Đang khởi tạo...`);
-            await Definition.updateMany({}, { active: false });
-
-            const newDef = new Definition({
-                version_id: stationCode,
-                active: true,
-                columns: []
-            });
-            targetDef = await newDef.save();
+            console.log(`[Cron Job] Không tìm thấy máy Trạm: ${stationCode}. Bỏ qua bản ghi này.`);
+            return;
         }
 
-        const values = [];
-
-        if (Array.isArray(sourceData)) {
-            sourceData.forEach(item => {
-                if (item.sensor_name && item.value !== undefined) {
-                    const parsedVal = typeof item.value === 'string' && !isNaN(item.value) ? parseFloat(item.value) : item.value;
-                    values.push({ key: item.sensor_name, value: parsedVal });
-                }
-            });
-        } else {
-            for (const [key, value] of Object.entries(sourceData)) {
-                if (key === '_id' || key === 'id' || key === 'timestamp' || key === 'created_at') continue;
-                const parsedVal = typeof value === 'string' && !isNaN(value) ? parseFloat(value) : value;
-                values.push({ key, value: parsedVal });
-            }
-        }
+        const values = Object.entries(sensors)
+            .filter(([key, value]) => typeof value === 'number' || (typeof value === 'string' && !isNaN(value)))
+            .map(([key, value]) => ({ 
+                key, 
+                value: typeof value === 'string' ? parseFloat(value) : value 
+            }));
 
         if (values.length > 0) {
             const newRecord = new Record({
@@ -61,22 +66,23 @@ export const fetchLogC003 = async () => {
             });
 
             await newRecord.save();
-            console.log(`[Cron Job] Đã lưu thành công 1 bản ghi vào DB dưới trạm ID: ${targetDef._id} (${stationCode})`);
-        } else {
-            console.log('[Cron Job] Body API không chứa tham số Cảm biến nào hợp lệ!');
-        }
+            console.log(`[Cron Job] Đã lưu thành công 1 bản ghi cho trạm: ${stationCode}`);
 
+            // Tự động cập nhật columns
+            await updateDefinitionColumns(targetDef, values, stationCode);
+        } else {
+            console.log('[Cron Job] Dữ liệu API không chứa cảm biến hợp lệ!');
+        }
     } catch (error) {
-        console.error('[Cron Job] Lỗi tự động Fetch Data:', error.message);
+        console.error('[Cron Job] Lỗi Fetch Data:', error.message);
     }
 };
 
-// [Yêu cầu 5]: Khởi tạo tác vụ định kỳ mỗi 10 phút
+// Khởi chạy các Job Scheduler định kỳ
 export const initCronJobs = () => {
-    fetchLogC003();
-
+    // Chạy mỗi 10 phút
     cron.schedule('*/10 * * * *', () => {
-        fetchLogC003();
+        fetchStationData();
     });
-    console.log('✅ Đã nạp Job Scheduler theo chu kỳ: Mỗi 10 Phút kéo dữ liệu cập nhật.');
+    console.log('Đã nạp Job Scheduler theo chu kỳ: Mỗi 10 Phút kéo dữ liệu cập nhật.');
 };

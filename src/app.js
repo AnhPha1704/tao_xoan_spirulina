@@ -9,10 +9,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Routes
-import sensorRoutes from './routes/sensorRoutes.js';
+import definitionRoutes from './routes/definitionRoutes.js';
+import recordRoutes from './routes/recordRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
-// [Yêu cầu 6]: Tích hợp Swagger Documentation
+// Swagger Documentation
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 
@@ -29,10 +30,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Mount API routes
-app.use('/api/Sensors', sensorRoutes);
+app.use('/api/Sensors', definitionRoutes);
+app.use('/api/Sensors', recordRoutes);
 app.use('/api/auth', authRoutes);
 
-// [Yêu cầu 6]: Tuyến đường hiển thị tài liệu API Swagger
+// Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Fallback: serve index.html for root

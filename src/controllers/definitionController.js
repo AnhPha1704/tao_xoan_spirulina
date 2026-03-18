@@ -1,16 +1,10 @@
 import { Definition } from '../models/Definition.js';
+import genericController from './genericController.js';
 
-// [Yêu cầu 4]: Lấy tất cả các cấu trúc hiện có
-export const getAllDefinitions = async (req, res) => {
-    try {
-        const definitions = await Definition.find({});
-        res.json(definitions);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+// Lấy tất cả các cấu trúc hiện có
+export const getAllDefinitions = genericController.getAll(Definition);
 
-// [Yêu cầu 4]: Lấy cấu trúc active hiện tại
+// Lấy cấu trúc active hiện tại
 export const getActiveDefinition = async (req, res) => {
     try {
         const activeDef = await Definition.findOne({ active: true });
@@ -24,13 +18,5 @@ export const getActiveDefinition = async (req, res) => {
     }
 };
 
-// [Yêu cầu 4]: Tạo mới cấu trúc định nghĩa cảm biến
-export const createDefinition = async (req, res) => {
-    try {
-        const newDef = new Definition(req.body);
-        const savedDef = await newDef.save();
-        res.status(201).json(savedDef);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+// Tạo mới cấu trúc định nghĩa cảm biến
+export const createDefinition = genericController.create(Definition);
