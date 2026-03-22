@@ -1,9 +1,6 @@
 import express from 'express';
-import {
-    getAllDefinitions,
-    getActiveDefinition,
-    createDefinition
-} from '../controllers/definitionController.js';
+import genericController from '../controllers/genericController.js';
+import { Definition } from '../models/Definition.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -18,7 +15,7 @@ const router = express.Router();
  *       200:
  *         description: Trả về mảng các Definitions.
  */
-router.get('/definitions', getAllDefinitions);
+router.get('/definitions', genericController.getAll(Definition));
 
 /**
  * @swagger
@@ -32,7 +29,18 @@ router.get('/definitions', getAllDefinitions);
  *       404:
  *         description: No active definition found.
  */
-router.get('/definitions/active', getActiveDefinition);
+router.get('/definitions/active', async (req, res) => {
+    try {
+        const activeDef = await Definition.findOne({ active: true });
+        if (activeDef) {
+            res.json(activeDef);
+        } else {
+            res.status(404).json({ message: 'No active definition found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+});
 
 /**
  * @swagger
@@ -52,6 +60,6 @@ router.get('/definitions/active', getActiveDefinition);
  *       201:
  *         description: Tạo mới thành công.
  */
-router.post('/definitions', protect, createDefinition);
+router.post('/definitions', protect, genericController.create(Definition));
 
 export default router;
