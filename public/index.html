@@ -1272,7 +1272,7 @@
 
     async function loadDefinitions() {
       const data = await api('/api/Sensors/definitions', 'GET');
-      const defs = Array.isArray(data) ? data : (data.value || []);
+      const defs = Array.isArray(data) ? data : (data.results || data.value || []);
       renderDefs(defs);
       if (defs.length && !currentDefId) {
         const active = defs.find(d => d.active || d.isActive) || defs[0];
@@ -1331,7 +1331,7 @@
       allRecords = [];
 
       const data = await api(`/api/Sensors/${defId}/GetAllRecords`, 'GET');
-      allRecords = Array.isArray(data) ? data : (data.value || []);
+      allRecords = Array.isArray(data) ? data : (data.results || data.value || []);
 
       document.getElementById('rec-count-badge').textContent = `${allRecords.length}`;
       renderSensorCards(allRecords);
@@ -1673,8 +1673,9 @@
       let body = {};
       try { body = JSON.parse(bodyStr); } catch { toast('Payload JSON bị lỗi syntax', 'err'); return; }
       const r = await api(`/api/Sensors/${defId}/UpdateRecordById/${recId}`, 'POST', body);
-      if (r._id) {
-        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã cập nhật record #${r._id.slice(-6)}</span>`;
+      const updatedId = r._id || (r.result && r.result._id);
+      if (updatedId) {
+        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã cập nhật record #${updatedId.slice(-6)}</span>`;
         toast('Cập nhật hoàn tất', 'ok');
         loadRecords(defId);
       }
@@ -1686,8 +1687,9 @@
       let body = {};
       try { body = JSON.parse(bodyStr); } catch { toast('Payload JSON bị lỗi syntax', 'err'); return; }
       const r = await api(`/api/Sensors/definitions`, 'POST', body);
-      if (r._id) {
-        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã tạo Definition mới #${r._id.slice(-6)}</span>`;
+      const createdId = r._id || (r.result && r.result._id);
+      if (createdId) {
+        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã tạo Definition mới #${createdId.slice(-6)}</span>`;
         toast('Tạo Trạm (Definition) mới thành công', 'ok');
         loadDefinitions(); // reload side list
       }
@@ -1701,8 +1703,9 @@
       let body = {};
       try { body = JSON.parse(bodyStr); } catch { toast('Payload JSON bị lỗi syntax', 'err'); return; }
       const r = await api(`/api/Sensors/${defId}/records`, 'POST', body);
-      if (r._id) {
-        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã bớm Data Record mới #${r._id.slice(-6)}</span>`;
+      const createdId = r._id || (r.result && r.result._id);
+      if (createdId) {
+        document.getElementById('qa-status').innerHTML = `<span style="color:var(--green)">✓ Đã bớm Data Record mới #${createdId.slice(-6)}</span>`;
         toast('Ghi dữ liệu thành công', 'ok');
         loadRecords(defId); // real time refresh
       }
@@ -1742,7 +1745,7 @@
     }
 
     function updateUIWithFilteredData(data, label) {
-      allRecords = Array.isArray(data) ? data : (data.value || []);
+      allRecords = Array.isArray(data) ? data : (data.results || data.value || []);
       toast(`Đã tìm thấy ${allRecords.length} bản ghi`, 'ok');
 
       document.getElementById('rec-count-badge').textContent = `${allRecords.length}`;

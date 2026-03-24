@@ -1,8 +1,17 @@
 import express from 'express';
 import genericController from '../controllers/genericController.js';
+import { 
+    getAllRecordsByDefinitionId,
+    createRecordWithDefinitionId,
+    getRecordsByActiveDefinition, 
+    filterRecords, 
+    getRecordsComplexStructure, 
+    getRecordsAfterDate, 
+    deleteRecordsByDefinitionId 
+} from '../controllers/recordController.js';
 import { Record } from '../models/Record.js';
 import { Definition } from '../models/Definition.js';
-import { protect } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -22,7 +31,7 @@ const router = express.Router();
  *       200:
  *         description: Thành công.
  */
-router.get('/:definition_id/GetAllRecords', genericController.getAll(Record));
+router.get('/:definition_id/GetAllRecords', getAllRecordsByDefinitionId);
 
 /**
  * @swagger
@@ -34,18 +43,7 @@ router.get('/:definition_id/GetAllRecords', genericController.getAll(Record));
  *       200:
  *         description: Trả về danh sách records.
  */
-router.get('/records/active-definition', async (req, res) => {
-    try {
-        const activeDef = await Definition.findOne({ active: true });
-        if (!activeDef) {
-            return res.status(404).json({ message: 'No active definition found' });
-        }
-        const records = await Record.find({ definition_id: activeDef._id });
-        res.json(records);
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
-});
+router.get('/records/active-definition', getRecordsByActiveDefinition);
 
 /**
  * @swagger
@@ -71,24 +69,7 @@ router.get('/records/active-definition', async (req, res) => {
  *       200:
  *         description: Trả về danh sách records thỏa điều kiện.
  */
-router.get('/records/filter', async (req, res) => {
-    try {
-        const { key, min, max } = req.query;
-        if (!key) {
-            return res.status(400).json({ message: 'Key is required for filtering' });
-        }
-        const query = { values: { $elemMatch: { key } } };
-        if (min !== undefined || max !== undefined) {
-            query.values.$elemMatch.value = {};
-            if (min !== undefined) query.values.$elemMatch.value.$gte = Number(min);
-            if (max !== undefined) query.values.$elemMatch.value.$lte = Number(max);
-        }
-        const records = await Record.find(query);
-        res.json(records);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.get('/records/filter', filterRecords);
 
 /**
  * @swagger
@@ -100,18 +81,7 @@ router.get('/records/filter', async (req, res) => {
  *       200:
  *         description: Trả về danh sách records.
  */
-router.get('/records/complex-structure', async (req, res) => {
-    try {
-        const complexDefs = await Definition.find({
-            $expr: { $gte: [{ $size: '$columns' }, 5] }
-        });
-        const defIds = complexDefs.map(d => d._id);
-        const records = await Record.find({ definition_id: { $in: defIds } });
-        res.json(records);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.get('/records/complex-structure', getRecordsComplexStructure);
 
 /**
  * @swagger
@@ -129,22 +99,13 @@ router.get('/records/complex-structure', async (req, res) => {
  *       200:
  *         description: Trả về danh số bản ghi.
  */
-router.get('/records/after-date', async (req, res) => {
-    try {
-        const { date } = req.query;
-        const targetDate = date ? new Date(date) : new Date('2026-02-01');
-        const records = await Record.find({ created_date: { $gt: targetDate } });
-        res.json(records);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.get('/records/after-date', getRecordsAfterDate);
 
 /**
  * @swagger
  * /api/Sensors/{definition_id}/records:
  *   post:
- *     summary: Tạo mới bản ghi Lịch sử (Record) (Yêu cầu JWT).
+ *     summary: Tạo mới bản ghi Lịch sử (Record) (Yêu cầu Admin).
  *     tags: [Records]
  *     security:
  *       - bearerAuth: []
@@ -163,14 +124,16 @@ router.get('/records/after-date', async (req, res) => {
  *     responses:
  *       201:
  *         description: Tạo mới thành công.
+ *       403:
+ *         description: Access denied. Admin only.
  */
-router.post('/:definition_id/records', protect, genericController.create(Record));
+router.post('/:definition_id/records', protect, adminOnly, createRecordWithDefinitionId);
 
 /**
  * @swagger
  * /api/Sensors/{definition_id}/DeleteRecords:
  *   post:
- *     summary: Xóa đồng loạt tất cả các cảm biến đi theo với definition_id (Yêu cầu JWT).
+ *     summary: Xóa đồng loạt tất cả các cảm biến đi theo với definition_id (Yêu cầu Admin).
  *     tags: [Records]
  *     security:
  *       - bearerAuth: []
@@ -183,22 +146,16 @@ router.post('/:definition_id/records', protect, genericController.create(Record)
  *     responses:
  *       200:
  *         description: Đã xóa n records.
+ *       403:
+ *         description: Access denied. Admin only.
  */
-router.post('/:definition_id/DeleteRecords', protect, async (req, res) => {
-    try {
-        const { definition_id } = req.params;
-        const result = await Record.deleteMany({ definition_id });
-        res.json({ message: `${result.deletedCount} records deleted successfully` });
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
-});
+router.post('/:definition_id/DeleteRecords', protect, adminOnly, deleteRecordsByDefinitionId);
 
 /**
  * @swagger
- * /api/Sensors/{definition_id}/UpdateRecordById/{record_id}:
+ * /api/Sensors/{definition_id}/UpdateRecordById/{id}:
  *   post:
- *     summary: Cập nhật thông tin của record theo JSON payload (Yêu cầu JWT).
+ *     summary: Cập nhật thông tin của record theo JSON payload (Yêu cầu Admin).
  *     tags: [Records]
  *     security:
  *       - bearerAuth: []
@@ -209,7 +166,7 @@ router.post('/:definition_id/DeleteRecords', protect, async (req, res) => {
  *         schema:
  *           type: string
  *       - in: path
- *         name: record_id
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
@@ -222,7 +179,9 @@ router.post('/:definition_id/DeleteRecords', protect, async (req, res) => {
  *     responses:
  *       200:
  *         description: Update thành công.
+ *       403:
+ *         description: Access denied. Admin only.
  */
-router.post('/:definition_id/UpdateRecordById/:record_id', protect, genericController.update(Record));
+router.post('/:definition_id/UpdateRecordById/:id', protect, adminOnly, genericController.update(Record));
 
 export default router;

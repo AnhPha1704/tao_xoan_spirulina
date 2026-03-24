@@ -1,88 +1,60 @@
 import mongoose from 'mongoose';
 
-const create = (model) => async (req, res) => {
-    console.log("Creating new document for model: " + model.modelName);
-
-    const item = new model({
+const create = (model) => (req, res, next) => {
+    console.log("from model" + model.modelName);
+    
+    const author = new model({
         _id: new mongoose.Types.ObjectId(),
         ...req.body
     });
 
-    try {
-        const result = await item.save();
-        res.status(201).json(result);
-    } catch (error) {
-        res.status(500).json({ error: error.message || error });
-    }
+    return author
+        .save()
+        .then((result) => res.status(201).json({ result }))
+        .catch((error) => res.status(500).json({ error }));
 };
 
-const getAll = (model, populate = []) => async (req, res) => {
-    try {
-        // Tự động lọc theo params hoặc query string
-        const filter = { ...req.params, ...req.query };
-        let query = model.find(filter);
-        
-        if (populate.length > 0) {
-            populate.forEach(p => {
-                query = query.populate(p);
-            });
-        }
-        const results = await query.exec();
-        res.status(200).json(results);
-    } catch (error) {
-        res.status(500).json({ error: error.message || error });
-    }
+const getAll = (model, populate) => (req, res) => {
+    return model.find()
+        .then((results) => res.status(200).json({ results }))
+        .catch((error) => res.status(500).json({ error }));
 };
 
-const get = (model, populate = []) => async (req, res) => {
-    try {
-        const id = req.params.id || req.params.record_id || req.params.definition_id;
-        let query = model.findById(id);
-        if (populate.length > 0) {
-            populate.forEach(p => {
-                query = query.populate(p);
-            });
-        }
-        const result = await query.exec();
-        if (result) {
-            res.status(200).json(result);
-        } else {
-            res.status(404).json({ message: 'Not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: error.message || error });
-    }
+const get = (model, populate) => (req, res) => {
+    const id = req.params.id;
+
+    return model.findById(id)
+        .then((result) => (result ? res.status(200).json({ result }) 
+                                : res.status(404).json({ message: 'Not found' })))
+        .catch((error) => res.status(500).json({ error }));
 };
 
-const update = (model) => async (req, res) => {
-    try {
-        const id = req.params.id || req.params.record_id || req.params.definition_id;
-        const result = await model.findById(id);
+const update = (model, populate) => (req, res) => {
+    const id = req.params.id;
 
-        if (result) {
-            result.set(req.body);
-            const savedResult = await result.save();
-            res.status(201).json(savedResult);
-        } else {
-            res.status(404).json({ message: 'Not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: error.message || error });
-    }
+    return model
+        .findOne({_id: id})
+        .then((result) => {
+            if (result) {
+                result.set(req.body);
+                return result
+                    .save()
+                    .then((result) => res.status(201).json({ result }))
+                    .catch((error) => res.status(500).json({ error }));
+            } else {
+                return res.status(404).json({ message: 'Not found' });
+            }
+        })
+        .catch((error) => res.status(500).json({ error }));
 };
 
-const remove = (model) => async (req, res) => {
-    try {
-        const id = req.params.id || req.params.record_id || req.params.definition_id;
-        const result = await model.findByIdAndDelete(id);
-        if (result) {
-            res.status(200).json({ message: 'Deleted' });
-        } else {
-            res.status(404).json({ message: 'Not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: error.message || error });
-    }
+const delet = (model) => (req, res) => {
+    const id = req.params.id;
+
+    return model.findByIdAndDelete(id)
+        .then((result) => (result ? res.status(201).json({ result, message: 'Deleted' }) 
+                              : res.status(404).json({ message: 'Not found' })))
+        .catch((error) => res.status(500).json({ error }));
 };
 
-export default { create, getAll, get, update, delete: remove };
+export default { create, getAll, get, update, delet };

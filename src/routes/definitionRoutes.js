@@ -1,7 +1,8 @@
 import express from 'express';
 import genericController from '../controllers/genericController.js';
+import { getActiveDefinition } from '../controllers/definitionController.js';
 import { Definition } from '../models/Definition.js';
-import { protect } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,24 +30,13 @@ router.get('/definitions', genericController.getAll(Definition));
  *       404:
  *         description: No active definition found.
  */
-router.get('/definitions/active', async (req, res) => {
-    try {
-        const activeDef = await Definition.findOne({ active: true });
-        if (activeDef) {
-            res.json(activeDef);
-        } else {
-            res.status(404).json({ message: 'No active definition found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
-});
+router.get('/definitions/active', getActiveDefinition);
 
 /**
  * @swagger
  * /api/Sensors/definitions:
  *   post:
- *     summary: Tạo mới máy Trạm (Definition) (Yêu cầu JWT).
+ *     summary: Tạo mới máy Trạm (Definition) (Yêu cầu Admin).
  *     tags: [Definitions]
  *     security:
  *       - bearerAuth: []
@@ -59,7 +49,9 @@ router.get('/definitions/active', async (req, res) => {
  *     responses:
  *       201:
  *         description: Tạo mới thành công.
+ *       403:
+ *         description: Access denied. Admin only.
  */
-router.post('/definitions', protect, genericController.create(Definition));
+router.post('/definitions', protect, adminOnly, genericController.create(Definition));
 
 export default router;

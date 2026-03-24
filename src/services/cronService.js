@@ -35,27 +35,43 @@ export const fetchStationData = async () => {
         }
 
         const data = await response.json();
-        const sensorsData = data.data || data;
-        
-        // Cấu trúc dữ liệu từ API C004: { stationCode, DO, EC, PH, T02, ... }
+        let sensorsData = data.data || data;
+
+        if (Array.isArray(sensorsData)) {
+            if (sensorsData.length === 0) return;
+
+            // Handle array of sensors: [{sensor_name: 'DO', value: 1}, {sensor_name: 'PH', value: 7}]
+            if (sensorsData[0].sensor_name && !sensorsData[0].stationCode) {
+                const grouped = { stationCode: sensorsData[0].version_id || sensorsData[0].station_id || 'C004' };
+                sensorsData.forEach(item => {
+                    if (item.sensor_name && typeof item.value !== 'undefined') {
+                        grouped[item.sensor_name] = item.value;
+                    }
+                });
+                sensorsData = grouped;
+            } else {
+                sensorsData = sensorsData[0];
+            }
+        }
+
         const { stationCode, ...sensors } = sensorsData;
 
         if (!stationCode) {
-            console.log('[Cron Job] Dữ liệu API không chứa stationCode. Bỏ qua.');
+            console.log('[Cron Job] Dữ liệu API không chứa stationCode (Cấu trúc lạ). Bỏ qua.');
             return;
         }
 
         let targetDef = await Definition.findOne({ version_id: stationCode });
         if (!targetDef) {
-            console.log(`[Cron Job] Không tìm thấy máy Trạm: ${stationCode}. Bỏ qua bản ghi này.`);
+            console.log(`[Cron Job] Không tìm thấy máy Trạm: ${stationCode}. Bỏ qua.`);
             return;
         }
 
         const values = Object.entries(sensors)
             .filter(([key, value]) => typeof value === 'number' || (typeof value === 'string' && !isNaN(value)))
-            .map(([key, value]) => ({ 
-                key, 
-                value: typeof value === 'string' ? parseFloat(value) : value 
+            .map(([key, value]) => ({
+                key,
+                value: typeof value === 'string' ? parseFloat(value) : value
             }));
 
         if (values.length > 0) {

@@ -18,11 +18,16 @@ const router = express.Router();
  *             properties:
  *               username:
  *                 type: string
+ *               email:
+ *                 type: string
  *               password:
  *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
  *     responses:
  *       201:
- *         description: Đăng ký thành công, trả về token.
+ *         description: Đăng ký thành công, trả về token và role.
  */
 router.post('/register', registerUser);
 /**
@@ -44,7 +49,7 @@ router.post('/register', registerUser);
  *                 type: string
  *     responses:
  *       200:
- *         description: Trả về access token.
+ *         description: Trả về access token và role.
  */
 router.post('/login', loginUser);
 

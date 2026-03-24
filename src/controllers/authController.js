@@ -9,7 +9,7 @@ const generateToken = (id) => {
 
 export const registerUser = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, email, password, role } = req.body;
 
         const userExists = await User.findOne({ username });
 
@@ -19,13 +19,16 @@ export const registerUser = async (req, res) => {
 
         const user = await User.create({
             username,
+            email,
             password,
+            role: role || 'user'
         });
 
         if (user) {
             res.status(201).json({
                 _id: user._id,
                 username: user.username,
+                role: user.role,
                 token: generateToken(user._id),
             });
         } else {
@@ -46,6 +49,7 @@ export const loginUser = async (req, res) => {
             res.json({
                 _id: user._id,
                 username: user.username,
+                role: user.role,
                 token: generateToken(user._id),
             });
         } else {
