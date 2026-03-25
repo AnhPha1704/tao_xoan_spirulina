@@ -16,6 +16,7 @@ const router = express.Router();
  *       200:
  *         description: Trả về mảng các Definitions.
  */
+// Yêu cầu: GET: api/Sensors/definitions (Lấy tất cả các cấu trúc hiện có)
 router.get('/definitions', genericController.getAll(Definition));
 
 /**
@@ -30,6 +31,7 @@ router.get('/definitions', genericController.getAll(Definition));
  *       404:
  *         description: No active definition found.
  */
+// Yêu cầu: GET: api/Sensors/definitions/active (Lấy definition active hiện tại)
 router.get('/definitions/active', getActiveDefinition);
 
 /**

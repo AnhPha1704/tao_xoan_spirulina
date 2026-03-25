@@ -1,13 +1,13 @@
 import express from 'express';
 import genericController from '../controllers/genericController.js';
-import { 
+import {
     getAllRecordsByDefinitionId,
     createRecordWithDefinitionId,
-    getRecordsByActiveDefinition, 
-    filterRecords, 
-    getRecordsComplexStructure, 
-    getRecordsAfterDate, 
-    deleteRecordsByDefinitionId 
+    getRecordsByActiveDefinition,
+    filterRecords,
+    getRecordsComplexStructure,
+    getRecordsAfterDate,
+    deleteRecordsByDefinitionId
 } from '../controllers/recordController.js';
 import { Record } from '../models/Record.js';
 import { Definition } from '../models/Definition.js';
@@ -31,6 +31,7 @@ const router = express.Router();
  *       200:
  *         description: Thành công.
  */
+// Yêu cầu: Get: api/Sensors/:definition_id/GetAllRecords (Lấy tất cả records theo definition_id)
 router.get('/:definition_id/GetAllRecords', getAllRecordsByDefinitionId);
 
 /**
@@ -149,6 +150,7 @@ router.post('/:definition_id/records', protect, adminOnly, createRecordWithDefin
  *       403:
  *         description: Access denied. Admin only.
  */
+// Yêu cầu: POST: api/Sensors/:definitions_id/DeleteRecords (Xóa tất cả records theo definition_id)
 router.post('/:definition_id/DeleteRecords', protect, adminOnly, deleteRecordsByDefinitionId);
 
 /**
@@ -182,6 +184,7 @@ router.post('/:definition_id/DeleteRecords', protect, adminOnly, deleteRecordsBy
  *       403:
  *         description: Access denied. Admin only.
  */
+// Yêu cầu: POST: api/Sensors/:definitions_id/UpdateRecordById/:record_id (Cập nhật thông tin record)
 router.post('/:definition_id/UpdateRecordById/:id', protect, adminOnly, genericController.update(Record));
 
 export default router;

@@ -43,7 +43,7 @@ export const getRecordsByActiveDefinition = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
-
+//sua cu phap 55-59
 export const filterRecords = async (req, res) => {
     try {
         const { key, min, max } = req.query;
@@ -62,7 +62,7 @@ export const filterRecords = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
+// 71-72
 export const getRecordsComplexStructure = async (req, res) => {
     try {
         const complexDefs = await Definition.find({
